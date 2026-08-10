@@ -88,18 +88,21 @@ int main(int argc, char* argv[]) {
         running = 0;
       }
 
-      // FIXED: Moved inside the event polling loop
+      // Add input text to string 
       if (event.type == SDL_TEXTINPUT) {
         inputText += event.text.text;
       }
 
-      // FIXED: Moved inside the event polling loop
+      // Handle Backspace.
       if (event.type == SDL_KEYDOWN) {
         if (event.key.keysym.sym == SDLK_BACKSPACE && !inputText.empty()) {
           inputText.pop_back();
         }
       }
     }
+
+
+      // TODO:: ADD ENTER KEY ADDING NEW LINE
 
     // --- Rendering Phase --- (FIXED: Now safely inside the game loop)
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
