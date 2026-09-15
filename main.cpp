@@ -124,7 +124,7 @@ int main(int argc, char* argv[]) {
       }
     }
 
-    // Step B: Draw the dynamic cursor at the end of the text
+    // Draw the dynamic cursor at the end of the text
     blinkCursor(renderer, font, inputText, textBoxX, textBoxY);
 
     SDL_RenderPresent(renderer);
