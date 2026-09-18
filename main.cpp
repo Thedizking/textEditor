@@ -2,6 +2,7 @@
 #include <SDL.h>
 #include <stdio.h>
 #include <SDL2/SDL_ttf.h>
+#include <vector>
 
 #define SCREEN_WIDTH 640
 #define SCREEN_HEIGHT 480
@@ -47,7 +48,7 @@ int main(int argc, char* argv[]) {
   }
 
   // Create window
-  SDL_Window* window = SDL_CreateWindow("SDL2 Template", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
+  SDL_Window* window = SDL_CreateWindow("Text Editor", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
   if (!window) {
     printf("Window could not be created! SDL_Error: %s\n", SDL_GetError());
     SDL_Quit();
@@ -75,6 +76,7 @@ int main(int argc, char* argv[]) {
   int running = 1;
   SDL_Event event;
   std::string inputText;
+  std::vector<std::string> totalText {inputText};
   int textBoxX = 2;
   int textBoxY = 2;
 
@@ -88,12 +90,22 @@ int main(int argc, char* argv[]) {
         running = 0;
       }
 
-      // FIXED: Moved inside the event polling loop
       if (event.type == SDL_TEXTINPUT) {
         inputText += event.text.text;
       }
 
-      // FIXED: Moved inside the event polling loop
+      // Handle Enter key
+      if (event.type == SDL_KEYDOWN) {
+        if (event.key.keysym.sym == SDLK_RETURN) {
+          totalText.push_back(inputText);
+          inputText = "";
+          textBoxY += 25;
+        }
+      }
+
+
+
+      // Handle BackSpace
       if (event.type == SDL_KEYDOWN) {
         if (event.key.keysym.sym == SDLK_BACKSPACE && !inputText.empty()) {
           inputText.pop_back();
@@ -101,33 +113,53 @@ int main(int argc, char* argv[]) {
       }
     }
 
-    // --- Rendering Phase --- (FIXED: Now safely inside the game loop)
+    // --- Rendering Phase --- 
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderClear(renderer);
 
-    if (!inputText.empty()) {
-      SDL_Color textColor = { 255, 255, 255, 255 }; // White text
-      SDL_Surface* textSurface = TTF_RenderText_Blended(font, inputText.c_str(), textColor);
 
-      if (textSurface) {
+      SDL_Color textColor = { 255, 255, 255, 255 }; // White text
+      
+      // Starting dimensions for text
+      int startX = 10;
+      int startY = -TTF_FontHeight(font);
+      int lineSpace = TTF_FontHeight(font);
+
+      for (size_t i = 0; i < totalText.size(); i++) {
+        SDL_Surface* textSurface = TTF_RenderText_Blended(font, totalText[i].c_str(), textColor);
+        if (!textSurface) continue; 
+
         SDL_Texture* textTexture = SDL_CreateTextureFromSurface(renderer, textSurface);
 
-        if (textTexture) {
-          SDL_Rect renderQuad = { textBoxX, textBoxY, textSurface->w, textSurface->h };
-          SDL_RenderCopy(renderer, textTexture, NULL, &renderQuad);
-          SDL_DestroyTexture(textTexture);
-        }
-        SDL_FreeSurface(textSurface);
-      }
-    }
 
-    // Step B: Draw the dynamic cursor at the end of the text
+        SDL_Rect lineSpaceRECT = {startX, startY + static_cast<int>(i * lineSpace), textSurface->w, textSurface->h};
+
+        SDL_RenderCopy(renderer, textTexture, NULL, &lineSpaceRECT);
+
+        SDL_FreeSurface(textSurface);
+        SDL_DestroyTexture(textTexture);
+
+      }
+
+
+      if (!inputText.empty()) {
+        SDL_Surface* inputSurface = TTF_RenderText_Blended(font, inputText.c_str(), textColor);
+        SDL_Texture* inputTexture = SDL_CreateTextureFromSurface(renderer, inputSurface);
+        if (!inputTexture) continue; 
+        int inputY = startY + static_cast<int>(totalText.size() * lineSpace);
+        SDL_Rect inputRECT = {startX, inputY, inputSurface->w, inputSurface->h};
+        SDL_RenderCopy(renderer, inputTexture, NULL, &inputRECT);
+        SDL_FreeSurface(inputSurface);
+        SDL_DestroyTexture(inputTexture);
+      }
+
+    // Draw Cursor
     blinkCursor(renderer, font, inputText, textBoxX, textBoxY);
 
     SDL_RenderPresent(renderer);
   } // <-- Game loop ends here
 
-  // Destroy resources and quit (FIXED: Out of loop scope)
+  // Destroy resources and quit
   SDL_StopTextInput();
   TTF_CloseFont(font);
   SDL_DestroyRenderer(renderer);
