@@ -4,8 +4,8 @@
 #include <SDL2/SDL_ttf.h>
 #include <vector>
 
-#define SCREEN_WIDTH 640
-#define SCREEN_HEIGHT 480
+#define SCREEN_WIDTH 1280
+#define SCREEN_HEIGHT 960
 
 void blinkCursor(SDL_Renderer* renderer, TTF_Font* font, const std::string& text, int textX, int textY) {
   Uint32 currentTime = SDL_GetTicks();
@@ -81,6 +81,7 @@ int main(int argc, char* argv[]) {
   int textBoxY = 2;
   int lineNum = 1;
   int charWidth = SCREEN_WIDTH / 24;
+  int charHeight = TTF_FontHeight(font);
 
   SDL_StartTextInput(); // Enable OS text input events
 
@@ -97,7 +98,7 @@ int main(int argc, char* argv[]) {
         if (inputText.size() >= charWidth) {
           totalText.push_back(inputText);
           inputText = "";
-          textBoxY += 25;
+          textBoxY += charHeight;
           lineNum++;
 
         }
@@ -108,7 +109,7 @@ int main(int argc, char* argv[]) {
         if (event.key.keysym.sym == SDLK_RETURN) {
           totalText.push_back(inputText);
           inputText = "";
-          textBoxY += 25;
+          textBoxY += charHeight;
           lineNum++;
         }
       }
@@ -120,7 +121,7 @@ int main(int argc, char* argv[]) {
         if (event.key.keysym.sym == SDLK_BACKSPACE && !inputText.empty()) {
           inputText.pop_back();
         } else if (event.key.keysym.sym == SDLK_BACKSPACE && inputText.empty() && textBoxY > 2) {
-          textBoxY -= 25;
+          textBoxY -= charHeight;
           inputText = totalText[lineNum - 1];
           totalText.pop_back();
           lineNum--;
@@ -129,15 +130,15 @@ int main(int argc, char* argv[]) {
     }
 
     // --- Rendering Phase --- 
-    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+    SDL_SetRenderDrawColor(renderer, 5, 0, 15, 255);
     SDL_RenderClear(renderer);
 
 
-      SDL_Color textColor = { 255, 255, 255, 255 }; // White text
+      SDL_Color textColor = { 225, 200, 255, 255 };
       
       // Starting dimensions for text
       int startX = 10;
-      int startY = -TTF_FontHeight(font);
+      int startY = -TTF_FontHeight(font) + 1;
       int lineSpace = TTF_FontHeight(font);
 
       for (size_t i = 0; i < totalText.size(); i++) {
