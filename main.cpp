@@ -79,6 +79,7 @@ int main(int argc, char* argv[]) {
   std::vector<std::string> totalText {inputText};
   int textBoxX = 2;
   int textBoxY = 2;
+  int lineNum = 1;
 
   SDL_StartTextInput(); // Enable OS text input events
 
@@ -100,6 +101,7 @@ int main(int argc, char* argv[]) {
           totalText.push_back(inputText);
           inputText = "";
           textBoxY += 25;
+          lineNum++;
         }
       }
 
@@ -109,6 +111,11 @@ int main(int argc, char* argv[]) {
       if (event.type == SDL_KEYDOWN) {
         if (event.key.keysym.sym == SDLK_BACKSPACE && !inputText.empty()) {
           inputText.pop_back();
+        } else if (event.key.keysym.sym == SDLK_BACKSPACE && inputText.empty() && textBoxY > 2) {
+          textBoxY -= 25;
+          inputText = totalText[lineNum - 1];
+          totalText.pop_back();
+          lineNum--;
         }
       }
     }
