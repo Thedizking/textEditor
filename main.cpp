@@ -80,6 +80,7 @@ int main(int argc, char* argv[]) {
   int textBoxX = 2;
   int textBoxY = 2;
   int lineNum = 1;
+  int charWidth = SCREEN_WIDTH / 24;
 
   SDL_StartTextInput(); // Enable OS text input events
 
@@ -93,6 +94,13 @@ int main(int argc, char* argv[]) {
 
       if (event.type == SDL_TEXTINPUT) {
         inputText += event.text.text;
+        if (inputText.size() >= charWidth) {
+          totalText.push_back(inputText);
+          inputText = "";
+          textBoxY += 25;
+          lineNum++;
+
+        }
       }
 
       // Handle Enter key
