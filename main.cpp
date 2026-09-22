@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <SDL2/SDL_ttf.h>
 #include <vector>
+#include <fstream>
 
 #define SCREEN_WIDTH 1280
 #define SCREEN_HEIGHT 960
@@ -48,7 +49,7 @@ int main(int argc, char* argv[]) {
   }
 
   // Create window
-  SDL_Window* window = SDL_CreateWindow("Text Editor", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
+  SDL_Window* window = SDL_CreateWindow("Text Editor", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN || SDL_WINDOW_RESIZABLE);
   if (!window) {
     printf("Window could not be created! SDL_Error: %s\n", SDL_GetError());
     SDL_Quit();
@@ -73,6 +74,14 @@ int main(int argc, char* argv[]) {
     return 1;
   }
 
+  std::ofstream tmpFile("tmpFile.txt");
+
+
+  if (!tmpFile.is_open()) {
+    std::cerr << "Error opening temp file!" << std::endl;
+    return 1;
+  }
+
   int running = 1;
   SDL_Event event;
   std::string inputText;
@@ -82,6 +91,8 @@ int main(int argc, char* argv[]) {
   int lineNum = 1;
   int charWidth = SCREEN_WIDTH / 24;
   int charHeight = TTF_FontHeight(font);
+  bool isSaving = false;
+  std::string saveText = "Please enter file name followed by the enter key.";
 
   SDL_StartTextInput(); // Enable OS text input events
 
@@ -90,6 +101,9 @@ int main(int argc, char* argv[]) {
     // Handle events on queue
     while (SDL_PollEvent(&event) != 0) {
       if (event.type == SDL_QUIT) {
+        for (std::string text : totalText) {
+          tmpFile << text << "\n"; 
+        }
         running = 0;
       }
 
@@ -129,6 +143,22 @@ int main(int argc, char* argv[]) {
       }
     }
 
+
+    // Handle Save Button CTRL/S
+    if (event.type == SDL_KEYDOWN) {
+      if (event.key.keysym.mod & KMOD_CTRL) {
+        if (event.key.keysym.sym == SDLK_s) {
+          totalText.push_back(inputText);
+          inputText = "";
+          textBoxY += charHeight;
+          lineNum++;
+          isSaving = true;
+          std::cout << "Saved!";
+        }
+      }
+    }
+
+
     // --- Rendering Phase --- 
     SDL_SetRenderDrawColor(renderer, 5, 0, 15, 255);
     SDL_RenderClear(renderer);
@@ -167,6 +197,19 @@ int main(int argc, char* argv[]) {
         SDL_RenderCopy(renderer, inputTexture, NULL, &inputRECT);
         SDL_FreeSurface(inputSurface);
         SDL_DestroyTexture(inputTexture);
+      }
+
+
+      if (isSaving) {
+        SDL_Surface* saveSurface = TTF_RenderText_Blended(font, saveText.c_str(), textColor);
+        SDL_Texture* saveTexture = SDL_CreateTextureFromSurface(renderer, saveSurface);
+        if (!saveTexture) continue; 
+        int inputY = startY + static_cast<int>(totalText.size() * lineSpace);
+        SDL_Rect saveRECT = {startX, inputY, saveSurface->w, saveSurface->h};
+        SDL_RenderCopy(renderer, saveTexture, NULL, &saveRECT);
+        SDL_FreeSurface(saveSurface);
+        SDL_DestroyTexture(saveTexture);
+        
       }
 
     // Draw Cursor
