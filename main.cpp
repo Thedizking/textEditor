@@ -2,9 +2,11 @@
 #include <SDL.h>
 #include <stdio.h>
 #include <SDL2/SDL_ttf.h>
+#include <vector>
+#include <fstream>
 
-#define SCREEN_WIDTH 640
-#define SCREEN_HEIGHT 480
+#define SCREEN_WIDTH 1280
+#define SCREEN_HEIGHT 960
 
 void blinkCursor(SDL_Renderer* renderer, TTF_Font* font, const std::string& text, int textX, int textY) {
   Uint32 currentTime = SDL_GetTicks();
@@ -27,7 +29,7 @@ void blinkCursor(SDL_Renderer* renderer, TTF_Font* font, const std::string& text
     } else {
       textHeight = TTF_FontHeight(font);
     }
-    SDL_Rect cursorRect = { textX + textWidth + 2, textY, 3, textHeight };
+    SDL_Rect cursorRect = { textX + textWidth + 10, textY, 3, textHeight };
     SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
     SDL_RenderFillRect(renderer, &cursorRect);
   }
@@ -40,6 +42,7 @@ int main(int argc, char* argv[]) {
     return 1;
   }
 
+  // Initialize TTF
   if (TTF_Init() == -1) {
     std::cerr << "TTF Init Error: " << TTF_GetError() << std::endl;
     SDL_Quit();
@@ -47,7 +50,7 @@ int main(int argc, char* argv[]) {
   }
 
   // Create window
-  SDL_Window* window = SDL_CreateWindow("SDL2 Template", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
+  SDL_Window* window = SDL_CreateWindow("Text Editor", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN || SDL_WINDOW_RESIZABLE);
   if (!window) {
     printf("Window could not be created! SDL_Error: %s\n", SDL_GetError());
     SDL_Quit();
@@ -63,7 +66,8 @@ int main(int argc, char* argv[]) {
     return 1;
   }
 
-  TTF_Font* font = TTF_OpenFont("Fonts/PressStart2P-Regular.ttf", 24);
+  // Set Font
+  TTF_Font* font = TTF_OpenFont("Fonts/SourceCodePro-VariableFont_wght.ttf", 32);
   if (!font) {
     std::cerr << "Font Load Error: " << TTF_GetError() << std::endl;
     SDL_DestroyRenderer(renderer);
@@ -72,57 +76,155 @@ int main(int argc, char* argv[]) {
     return 1;
   }
 
-  int running = 1;
+  std::ofstream tmpFile("tmpFile.txt");
+
+
+  if (!tmpFile.is_open()) {
+    std::cerr << "Error opening temp file!" << std::endl;
+    return 1;
+  }
+
+  bool running = true;
   SDL_Event event;
   std::string inputText;
+  std::vector<std::string> totalText {inputText};
   int textBoxX = 2;
   int textBoxY = 2;
+  int lineNum = 1;
+  int charWidth = SCREEN_WIDTH / 24;
+  int charHeight = TTF_FontHeight(font);
+  bool isSaving = false;
+  std::string saveText = "Please enter file name followed by the enter key.";
 
   SDL_StartTextInput(); // Enable OS text input events
 
-  // Game/Application loop
+  // Application loop
   while (running) {
     // Handle events on queue
     while (SDL_PollEvent(&event) != 0) {
       if (event.type == SDL_QUIT) {
-        running = 0;
+        for (std::string text : totalText) {
+          tmpFile << text << "\n"; 
+        }
+        if (!inputText.empty()) {
+          tmpFile << inputText << "\n";
+        }
+
+        tmpFile.close();
+
+        running = false;
       }
 
       // Add input text to string 
       if (event.type == SDL_TEXTINPUT) {
         inputText += event.text.text;
+        if (inputText.size() >= charWidth) {
+          totalText.push_back(inputText);
+          inputText = "";
+          textBoxY += charHeight;
+          lineNum++;
+
+        }
       }
 
+      // Handle Enter key
+      if (event.type == SDL_KEYDOWN) {
+        if (event.key.keysym.sym == SDLK_RETURN) {
+          totalText.push_back(inputText);
+          inputText = "";
+          textBoxY += charHeight;
+          lineNum++;
+        }
+      }
+
+
+
+      
       // Handle Backspace.
       if (event.type == SDL_KEYDOWN) {
         if (event.key.keysym.sym == SDLK_BACKSPACE && !inputText.empty()) {
           inputText.pop_back();
+        } else if (event.key.keysym.sym == SDLK_BACKSPACE && inputText.empty() && textBoxY > 2) {
+          textBoxY -= charHeight;
+          inputText = totalText[lineNum - 1];
+          totalText.pop_back();
+          lineNum--;
         }
       }
     }
 
 
-      // TODO:: ADD ENTER KEY ADDING NEW LINE
+    // Handle Save Button CTRL/S NOT WORKING DEFAULT TO SAVE ON QUIT
+    if (event.type == SDL_KEYDOWN) {
+      if (event.key.keysym.mod & KMOD_CTRL) {
+        if (event.key.keysym.sym == SDLK_s) {
+          totalText.push_back(inputText);
+          inputText = "";
+          textBoxY += charHeight;
+          lineNum++;
+          isSaving = true;
+          std::cout << "Saved!";
+        }
+      }
+    }
+
+
+    // --- Rendering Phase --- 
+    SDL_SetRenderDrawColor(renderer, 5, 0, 15, 255);
+    
 
     // --- Rendering Phase --- (FIXED: Now safely inside the game loop)
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderClear(renderer);
 
-    if (!inputText.empty()) {
-      SDL_Color textColor = { 255, 255, 255, 255 }; // White text
-      SDL_Surface* textSurface = TTF_RenderText_Blended(font, inputText.c_str(), textColor);
 
-      if (textSurface) {
+      SDL_Color textColor = { 225, 200, 255, 255 };
+      
+      // Starting dimensions for text
+      int startX = 10;
+      int startY = -TTF_FontHeight(font) + 1;
+      int lineSpace = TTF_FontHeight(font);
+
+      for (size_t i = 0; i < totalText.size(); i++) {
+        SDL_Surface* textSurface = TTF_RenderText_Blended(font, totalText[i].c_str(), textColor);
+        if (!textSurface) continue; 
+
         SDL_Texture* textTexture = SDL_CreateTextureFromSurface(renderer, textSurface);
 
-        if (textTexture) {
-          SDL_Rect renderQuad = { textBoxX, textBoxY, textSurface->w, textSurface->h };
-          SDL_RenderCopy(renderer, textTexture, NULL, &renderQuad);
-          SDL_DestroyTexture(textTexture);
-        }
+
+        SDL_Rect lineSpaceRECT = {startX, startY + static_cast<int>(i * lineSpace), textSurface->w, textSurface->h};
+
+        SDL_RenderCopy(renderer, textTexture, NULL, &lineSpaceRECT);
+
         SDL_FreeSurface(textSurface);
+        SDL_DestroyTexture(textTexture);
+
       }
-    }
+
+
+      if (!inputText.empty()) {
+        SDL_Surface* inputSurface = TTF_RenderText_Blended(font, inputText.c_str(), textColor);
+        SDL_Texture* inputTexture = SDL_CreateTextureFromSurface(renderer, inputSurface);
+        if (!inputTexture) continue; 
+        int inputY = startY + static_cast<int>(totalText.size() * lineSpace);
+        SDL_Rect inputRECT = {startX, inputY, inputSurface->w, inputSurface->h};
+        SDL_RenderCopy(renderer, inputTexture, NULL, &inputRECT);
+        SDL_FreeSurface(inputSurface);
+        SDL_DestroyTexture(inputTexture);
+      }
+
+
+      if (isSaving) {
+        SDL_Surface* saveSurface = TTF_RenderText_Blended(font, saveText.c_str(), textColor);
+        SDL_Texture* saveTexture = SDL_CreateTextureFromSurface(renderer, saveSurface);
+        if (!saveTexture) continue; 
+        int inputY = startY + static_cast<int>(totalText.size() * lineSpace);
+        SDL_Rect saveRECT = {startX, inputY, saveSurface->w, saveSurface->h};
+        SDL_RenderCopy(renderer, saveTexture, NULL, &saveRECT);
+        SDL_FreeSurface(saveSurface);
+        SDL_DestroyTexture(saveTexture);
+        
+      }
 
     // Draw the dynamic cursor at the end of the text
     blinkCursor(renderer, font, inputText, textBoxX, textBoxY);
@@ -130,7 +232,7 @@ int main(int argc, char* argv[]) {
     SDL_RenderPresent(renderer);
   } // <-- Game loop ends here
 
-  // Destroy resources and quit (FIXED: Out of loop scope)
+  // Destroy resources and quit
   SDL_StopTextInput();
   TTF_CloseFont(font);
   SDL_DestroyRenderer(renderer);
