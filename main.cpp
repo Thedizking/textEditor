@@ -42,6 +42,7 @@ int main(int argc, char* argv[]) {
     return 1;
   }
 
+  // Initialize TTF
   if (TTF_Init() == -1) {
     std::cerr << "TTF Init Error: " << TTF_GetError() << std::endl;
     SDL_Quit();
@@ -65,7 +66,8 @@ int main(int argc, char* argv[]) {
     return 1;
   }
 
-  TTF_Font* font = TTF_OpenFont("Fonts/PressStart2P-Regular.ttf", 24);
+  // Set Font
+  TTF_Font* font = TTF_OpenFont("Fonts/SourceCodePro-VariableFont_wght.ttf", 32);
   if (!font) {
     std::cerr << "Font Load Error: " << TTF_GetError() << std::endl;
     SDL_DestroyRenderer(renderer);
@@ -82,7 +84,7 @@ int main(int argc, char* argv[]) {
     return 1;
   }
 
-  int running = 1;
+  bool running = true;
   SDL_Event event;
   std::string inputText;
   std::vector<std::string> totalText {inputText};
@@ -96,7 +98,7 @@ int main(int argc, char* argv[]) {
 
   SDL_StartTextInput(); // Enable OS text input events
 
-  // Game/Application loop
+  // Application loop
   while (running) {
     // Handle events on queue
     while (SDL_PollEvent(&event) != 0) {
@@ -104,7 +106,13 @@ int main(int argc, char* argv[]) {
         for (std::string text : totalText) {
           tmpFile << text << "\n"; 
         }
-        running = 0;
+        if (!inputText.empty()) {
+          tmpFile << inputText << "\n";
+        }
+
+        tmpFile.close();
+
+        running = false;
       }
 
       if (event.type == SDL_TEXTINPUT) {
