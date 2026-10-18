@@ -29,7 +29,7 @@ void blinkCursor(SDL_Renderer* renderer, TTF_Font* font, const std::string& text
     } else {
       textHeight = TTF_FontHeight(font);
     }
-    SDL_Rect cursorRect = { textX + textWidth + 2, textY, 3, textHeight };
+    SDL_Rect cursorRect = { textX + textWidth + 10, textY, 3, textHeight };
     SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
     SDL_RenderFillRect(renderer, &cursorRect);
   }
