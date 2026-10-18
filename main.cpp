@@ -115,6 +115,7 @@ int main(int argc, char* argv[]) {
         running = false;
       }
 
+      // Add input text to string 
       if (event.type == SDL_TEXTINPUT) {
         inputText += event.text.text;
         if (inputText.size() >= charWidth) {
@@ -138,7 +139,8 @@ int main(int argc, char* argv[]) {
 
 
 
-      // Handle BackSpace
+      
+      // Handle Backspace.
       if (event.type == SDL_KEYDOWN) {
         if (event.key.keysym.sym == SDLK_BACKSPACE && !inputText.empty()) {
           inputText.pop_back();
@@ -152,7 +154,7 @@ int main(int argc, char* argv[]) {
     }
 
 
-    // Handle Save Button CTRL/S
+    // Handle Save Button CTRL/S NOT WORKING DEFAULT TO SAVE ON QUIT
     if (event.type == SDL_KEYDOWN) {
       if (event.key.keysym.mod & KMOD_CTRL) {
         if (event.key.keysym.sym == SDLK_s) {
@@ -169,6 +171,10 @@ int main(int argc, char* argv[]) {
 
     // --- Rendering Phase --- 
     SDL_SetRenderDrawColor(renderer, 5, 0, 15, 255);
+    
+
+    // --- Rendering Phase --- (FIXED: Now safely inside the game loop)
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderClear(renderer);
 
 
@@ -220,7 +226,7 @@ int main(int argc, char* argv[]) {
         
       }
 
-    // Draw Cursor
+    // Draw the dynamic cursor at the end of the text
     blinkCursor(renderer, font, inputText, textBoxX, textBoxY);
 
     SDL_RenderPresent(renderer);
