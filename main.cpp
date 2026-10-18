@@ -88,10 +88,10 @@ int main(int argc, char* argv[]) {
   SDL_Event event;
   std::string inputText;
   std::vector<std::string> totalText {inputText};
-  int textBoxX = 2;
+  int textBoxX = 11;
   int textBoxY = 2;
   int lineNum = 1;
-  int charWidth = SCREEN_WIDTH / 24;
+  int charWidth = 13;
   int charHeight = TTF_FontHeight(font);
   bool isSaving = false;
   std::string saveText = "Please enter file name followed by the enter key.";
@@ -115,10 +115,16 @@ int main(int argc, char* argv[]) {
         running = false;
       }
 
+      if (event.type == SDL_KEYDOWN) {
+        if (event.key.keysym.sym == SDLK_ESCAPE)
+          running = false;
+      }
+
+
       // Add input text to string 
       if (event.type == SDL_TEXTINPUT) {
         inputText += event.text.text;
-        if (inputText.size() >= charWidth) {
+        if (inputText.size() * charWidth >= SCREEN_WIDTH) {
           totalText.push_back(inputText);
           inputText = "";
           textBoxY += charHeight;
@@ -181,7 +187,7 @@ int main(int argc, char* argv[]) {
       SDL_Color textColor = { 225, 200, 255, 255 };
       
       // Starting dimensions for text
-      int startX = 10;
+      int startX = 20;
       int startY = -TTF_FontHeight(font) + 1;
       int lineSpace = TTF_FontHeight(font);
 
