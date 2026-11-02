@@ -94,6 +94,7 @@ int main(int argc, char* argv[]) {
   int charWidth = 13;
   int charHeight = TTF_FontHeight(font);
   bool isSaving = false;
+  bool inSave = false;
   std::string saveText = "Please enter file name followed by the enter key.";
 
   SDL_StartTextInput(); // Enable OS text input events
@@ -115,14 +116,10 @@ int main(int argc, char* argv[]) {
         running = false;
       }
 
-      if (event.type == SDL_KEYDOWN) {
-        if (event.key.keysym.sym == SDLK_ESCAPE)
-          running = false;
-      }
 
 
       // Add input text to string 
-      if (event.type == SDL_TEXTINPUT) {
+      else if (event.type == SDL_TEXTINPUT) {
         inputText += event.text.text;
         if (inputText.size() * charWidth >= SCREEN_WIDTH) {
           totalText.push_back(inputText);
@@ -133,21 +130,17 @@ int main(int argc, char* argv[]) {
         }
       }
 
-      // Handle Enter key
-      if (event.type == SDL_KEYDOWN) {
+      else if (event.type == SDL_KEYDOWN) {
+        if (event.key.keysym.sym == SDLK_ESCAPE)
+          running = false;
+        // Handle Enter Key
         if (event.key.keysym.sym == SDLK_RETURN) {
           totalText.push_back(inputText);
           inputText = "";
           textBoxY += charHeight;
           lineNum++;
         }
-      }
-
-
-
-      
-      // Handle Backspace.
-      if (event.type == SDL_KEYDOWN) {
+        // Handle Backspace
         if (event.key.keysym.sym == SDLK_BACKSPACE && !inputText.empty()) {
           inputText.pop_back();
         } else if (event.key.keysym.sym == SDLK_BACKSPACE && inputText.empty() && textBoxY > 2) {
@@ -156,23 +149,30 @@ int main(int argc, char* argv[]) {
           totalText.pop_back();
           lineNum--;
         }
-      }
-    }
+        if (event.key.keysym.mod & KMOD_CTRL) {
+          std::cout << "control pressed" << std::endl;
+          if (event.key.keysym.sym == SDLK_s) {
+            std::cout << "Saved!" << std::endl;
+            totalText.push_back(inputText);
+            inputText = "";
+            textBoxY += charHeight;
+            lineNum++;
+            isSaving = true;
 
-
-    // Handle Save Button CTRL/S NOT WORKING DEFAULT TO SAVE ON QUIT
-    if (event.type == SDL_KEYDOWN) {
-      if (event.key.keysym.mod & KMOD_CTRL) {
-        if (event.key.keysym.sym == SDLK_s) {
-          totalText.push_back(inputText);
-          inputText = "";
-          textBoxY += charHeight;
-          lineNum++;
-          isSaving = true;
-          std::cout << "Saved!";
+          }
         }
       }
     }
+    
+
+      // TODO: ADD ARROW KEY FUNCTIONALITY
+
+
+
+
+      
+
+
 
 
     // --- Rendering Phase --- 
