@@ -117,75 +117,102 @@ int main(int argc, char* argv[]) {
       }
 
 
-
-      // Add input text to string 
-      else if (event.type == SDL_TEXTINPUT) {
-        inputText += event.text.text;
-        if (inputText.size() * charWidth >= SCREEN_WIDTH) {
-          totalText.push_back(inputText);
-          inputText = "";
-          textBoxY += charHeight;
-          lineNum++;
+      else if (isSaving) {
+        if (event.type == SDL_TEXTINPUT) {
+          inputText += event.text.text;
+        } else if (event.type == SDL_KEYDOWN) {
+          if (event.key.keysym.sym == SDLK_RETURN) {
+            std::ofstream outputFile(inputText);
+            std::cout << "Save Confimed!" << std::endl;
+            if (inputText.empty()) {
+              std::cerr << "Could not open file" << inputText << std::endl;
+            } else {
+              for (const std::string& text : totalText) {
+                outputFile << text << "\n";
+              }
+              outputFile.close();
+              std::cout << "Save Succeded" << std::endl;
+              running = false;
+            }
+           
+          } else if (event.key.keysym.sym == SDLK_BACKSPACE && !inputText.empty()) {
+            inputText.pop_back();
+          } else if (event.key.keysym.sym == SDLK_ESCAPE) {
+            isSaving = false;
+            running = false;
+          }
 
         }
-      }
+      } else {
 
-      else if (event.type == SDL_KEYDOWN) {
-        if (event.key.keysym.sym == SDLK_ESCAPE)
-          running = false;
-        // Handle Enter Key
-        if (event.key.keysym.sym == SDLK_RETURN) {
-          totalText.push_back(inputText);
-          inputText = "";
-          textBoxY += charHeight;
-          lineNum++;
-        }
-        // Handle Backspace
-        if (event.key.keysym.sym == SDLK_BACKSPACE && !inputText.empty()) {
-          inputText.pop_back();
-        } else if (event.key.keysym.sym == SDLK_BACKSPACE && inputText.empty() && textBoxY > 2) {
-          textBoxY -= charHeight;
-          inputText = totalText[lineNum - 1];
-          totalText.pop_back();
-          lineNum--;
-        }
-        if (event.key.keysym.mod & KMOD_CTRL) {
-          std::cout << "control pressed" << std::endl;
-          if (event.key.keysym.sym == SDLK_s) {
-            std::cout << "Saved!" << std::endl;
+          // Add input text to string 
+          if (event.type == SDL_TEXTINPUT) {
+            inputText += event.text.text;
+            if (inputText.size() * charWidth >= SCREEN_WIDTH) {
+              totalText.push_back(inputText);
+              inputText = "";
+              textBoxY += charHeight;
+              lineNum++;
+
+            }
+          }
+        
+
+        else if (event.type == SDL_KEYDOWN) {
+          if (event.key.keysym.sym == SDLK_ESCAPE)
+            running = false;
+
+          // Handle Enter Key
+          if (event.key.keysym.sym == SDLK_RETURN && !isSaving) {
             totalText.push_back(inputText);
             inputText = "";
             textBoxY += charHeight;
             lineNum++;
-            isSaving = true;
+          }
+          // Handle Backspace
+          if (event.key.keysym.sym == SDLK_BACKSPACE && !inputText.empty()) {
+            inputText.pop_back();
+          } else if (event.key.keysym.sym == SDLK_BACKSPACE && inputText.empty() && textBoxY > 2) {
+            textBoxY -= charHeight;
+            inputText = totalText[lineNum - 1];
+            totalText.pop_back();
+            lineNum--;
+          }
+          // Handle Save State  
+          if (event.key.keysym.mod & KMOD_CTRL) {
+            if (event.key.keysym.sym == SDLK_s) {
+              totalText.push_back(inputText);
+              inputText = "";
+              textBoxY += charHeight;
+              lineNum++;
+              isSaving = true;
 
+            }
           }
         }
       }
-    }
-    
+      }
+
 
       // TODO: ADD ARROW KEY FUNCTIONALITY
 
 
 
 
-      
 
 
 
 
-    // --- Rendering Phase --- 
-    SDL_SetRenderDrawColor(renderer, 5, 0, 15, 255);
-    
 
-    // --- Rendering Phase --- (FIXED: Now safely inside the game loop)
-    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-    SDL_RenderClear(renderer);
+      // --- Rendering Phase --- 
+      SDL_SetRenderDrawColor(renderer, 5, 0, 15, 255);
+
+
+      SDL_RenderClear(renderer);
 
 
       SDL_Color textColor = { 225, 200, 255, 255 };
-      
+
       // Starting dimensions for text
       int startX = 20;
       int startY = -TTF_FontHeight(font) + 1;
@@ -221,31 +248,46 @@ int main(int argc, char* argv[]) {
 
 
       if (isSaving) {
+        SDL_SetRenderDrawColor(renderer, 5, 0, 15, 255);
+        SDL_RenderClear(renderer);
         SDL_Surface* saveSurface = TTF_RenderText_Blended(font, saveText.c_str(), textColor);
         SDL_Texture* saveTexture = SDL_CreateTextureFromSurface(renderer, saveSurface);
         if (!saveTexture) continue; 
-        int inputY = startY + static_cast<int>(totalText.size() * lineSpace);
-        SDL_Rect saveRECT = {startX, inputY, saveSurface->w, saveSurface->h};
+        SDL_Rect saveRECT = {startX, startY + charHeight, saveSurface->w, saveSurface->h};
         SDL_RenderCopy(renderer, saveTexture, NULL, &saveRECT);
         SDL_FreeSurface(saveSurface);
         SDL_DestroyTexture(saveTexture);
-        
+        if (!inputText.empty()) {
+          SDL_Surface* inputSurface = TTF_RenderText_Blended(font, inputText.c_str(), textColor);
+          SDL_Texture* inputTexture = SDL_CreateTextureFromSurface(renderer, inputSurface);
+          if (!inputTexture) continue; 
+
+          int inputY = startY + static_cast<int>(totalText.size() * lineSpace);
+          SDL_Rect inputRECT = {startX, inputY, inputSurface->w, inputSurface->h};
+          SDL_RenderCopy(renderer, inputTexture, NULL, &inputRECT);
+          SDL_FreeSurface(inputSurface);
+          SDL_DestroyTexture(inputTexture);
+
+
+
+        }
+
       }
 
-    // Draw the dynamic cursor at the end of the text
-    blinkCursor(renderer, font, inputText, textBoxX, textBoxY);
+      // Draw the dynamic cursor at the end of the text
+      blinkCursor(renderer, font, inputText, textBoxX, textBoxY);
 
-    SDL_RenderPresent(renderer);
-  } // <-- Game loop ends here
+      SDL_RenderPresent(renderer);
+    } // <-- Game loop ends here
 
-  // Destroy resources and quit
-  SDL_StopTextInput();
-  TTF_CloseFont(font);
-  SDL_DestroyRenderer(renderer);
-  SDL_DestroyWindow(window);
-  TTF_Quit();
-  SDL_Quit();
+    // Destroy resources and quit
+    SDL_StopTextInput();
+    TTF_CloseFont(font);
+    SDL_DestroyRenderer(renderer);
+    SDL_DestroyWindow(window);
+    TTF_Quit();
+    SDL_Quit();
 
-  return 0;
-}
+    return 0;
+  }
 
