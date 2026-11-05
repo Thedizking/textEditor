@@ -5,6 +5,11 @@ Currently only runs on linux
 
 All Code is listed in branch lol
 
+Current build is functionally complete however a few more features are intended to be added.  
+i.e. Code Coloring, Copy Paste.
+
+Build instructions below.
+
 ## Required Dependencies
 
 - SDL2 
