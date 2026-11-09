@@ -31,3 +31,8 @@ g++ main.cpp -o textEditor `pkg-config --cflags --libs sdl2 SDL2_ttf`
 ./textEditor <filename>
 
 ```
+
+
+To save the File press "CTRL + S" 
+
+To exit without saving press "ESCAPE"
