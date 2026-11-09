@@ -4,8 +4,8 @@
 #include <SDL2/SDL_ttf.h>
 #include <vector>
 #include <fstream>
-#include <cctype>
-#include <algorithm>
+#include <cctype> // For std::tolower()
+#include <algorithm> // Delete after refactoring save input.
 
 #define SCREEN_WIDTH 1280
 #define SCREEN_HEIGHT 960
@@ -91,12 +91,12 @@ void updateScroll(int cursorLine, int cursorCol, int& scrollLine, const std::vec
 
 int main(int argc, char* argv[]) {
 
-  if (argc < 2) {
+  if (argc < 2) { // Makes sure at RunTime both ./textEditor and a file name are declared
     std::cerr << "Error: Must include filename\n" <<"Run The following:\n" << argv[0] << " <filename>\n";
     return 1;
   }
 
-  std::vector<std::string> totalText;
+  std::vector<std::string> totalText; // Main vector to store our text
 
   if (!loadFile(argv[1], totalText)) {
     return 1;
@@ -110,7 +110,7 @@ int main(int argc, char* argv[]) {
   int cursorLine = static_cast<int>(totalText.size()) - 1; 
   int cursorCol = static_cast<int>(totalText[cursorLine].size());
 
-  // Create an isolated string buffer just for the Save overlay screen
+  // Create an isolated char buffer just for the Save overlay screen
   std::string saveInputBuffer = ""; 
 
 
@@ -172,11 +172,8 @@ int main(int argc, char* argv[]) {
     // Handle events on queue
     while (SDL_PollEvent(&event) != 0) {
       if (event.type == SDL_QUIT) {
-        if (!saveFile(argv[1], totalText)) {
-          std::cerr << "Could not open file for saving.";
-          return 1;
-        }
         running = false;
+        return 0;
       }
 
 
